@@ -1,0 +1,53 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use App\Command\IndexCommand;
+use App\Http\RequestContext;
+
+// container
+$container = require __DIR__ . '/../bootstrap.php';
+
+// commandes disponibles
+$commands = [
+    'index:full' => IndexCommand::class,
+];
+
+// argument CLI
+$commandName = $argv[1] ?? null;
+$parts = explode(':', (string)($commandName ?? ''), 2);
+$method = $parts[1] ?? null;
+$params = [];
+if (($argv[2] ?? null) !== null) {
+    foreach (explode(' ', (string) $argv[2]) as $arg) {
+        $arg = ltrim($arg, '-');
+
+        if (str_contains($arg, '=')) {
+            [$key, $value] = explode('=', $arg, 2);
+            $params[$key] = $value;
+        }
+    }
+}
+
+if (!$commandName || !isset($commands[$commandName]) || $method === null) {
+    echo "Available commands:\n";
+    foreach ($commands as $name => $_) {
+        echo " - $name\n";
+    }
+    exit(1);
+}
+
+$context = new RequestContext(
+    entity: $params['type'] ?? 'edition'
+);
+
+// résolution via container (autowire)
+$command = $container->get(
+    $commands[$commandName],
+    [
+        RequestContext::class => $context
+    ]
+);
+
+$command->$method($params);

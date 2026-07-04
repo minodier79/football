@@ -1,0 +1,19 @@
+{
+  "source": {
+    "db": "source",
+    "user": "root",
+    "password": ""
+  },
+
+  "football": {
+    "db": "football",
+    "user": "root",
+    "password": ""
+  },
+
+  "fbd08": {
+    "db": "fbd08",
+    "user": "root",
+    "password": ""
+  }
+}
