@@ -15,8 +15,18 @@ class IndexCommand
 
     public function full(array $params = []): void
     {
-        $type = $params['type'] ?? 'edition';
-        
+        $types = isset($params['type']) ? [$params['type']] : ['edition', 'standing'];
+
+        foreach ($types as $type) {
+
+            echo sprintf("Indexing %ss...\n", $type);
+
+            $this->index($type);
+        }
+    }
+
+    private function index(string $type): void
+    {
         $className = sprintf(
             'App\\Elastic\\Indexer\\%sIndexer',
             ucfirst($type)
@@ -69,20 +79,26 @@ class IndexCommand
         }
 
         $this->client->restoreSettings($indexName);
+
+        if (!$this->client->indexExists($indexName)) {
+            echo sprintf("Index %s was not created; skipping alias update.\n", $indexName);
+            return;
+        }
         
         $aliases = $this->client->getAliases($aliasName);
 
         $this->switchAlias($aliases, $aliasName, $indexName);
 
-        if (!empty($aliases)) {
-            $this->deleteOldIndexes($aliases);
-        }
+        $updatedAliases = $this->client->getAliases($aliasName);
+        $this->deleteOldIndexes($updatedAliases, $indexName, $type);
 
         echo sprintf("DONE 🚀 (%d indexed)\n", $count);
     }
 
     public function switchAlias(array $aliases, string $aliasName, string $indexName): void
     {
+        $this->actions = [];
+
         try {
             $this->removeOldIndexes($aliases, $aliasName);
         } catch (\Exception $e) {
@@ -119,9 +135,15 @@ class IndexCommand
         $this->client->updateIndexAliases($this->actions);
     }
 
-    private function deleteOldIndexes($aliases): void
+    private function deleteOldIndexes(array $aliases, string $indexName, string $type): void
     {
-        foreach (array_keys($aliases) as $oldIndex) {
+        $aliasedIndexes = array_keys($aliases);
+        $matchingIndexes = $this->client->getIndices(sprintf('%ss_*', $type));
+
+        foreach ($matchingIndexes as $oldIndex) {
+            if ($oldIndex === $indexName || in_array($oldIndex, $aliasedIndexes, true)) {
+                continue;
+            }
 
             echo sprintf("Deleting old index %s\n", $oldIndex);
 

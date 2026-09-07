@@ -95,6 +95,23 @@ class ElasticClient
         ]);
     }
 
+    public function indexExists(string $indexName): bool
+    {
+        try {
+            $response = $this->client->indices()->exists([
+                'index' => $indexName
+            ]);
+
+            return $response->getStatusCode() === 200;
+        } catch (ClientResponseException $e) {
+            if ($e->getCode() === 404) {
+                return false;
+            }
+
+            throw $e;
+        }
+    }
+
     public function getAliases(string $aliasName): array
     {
         try {
@@ -109,16 +126,45 @@ class ElasticClient
     }
 
     public function updateIndexAliases(array $actions): void {
-        $this->client->indices()->updateAliases([
-              'body' => [
-                  'actions' => $actions
-              ]
-        ]);
+        try {
+            $this->client->indices()->updateAliases([
+                'body' => [
+                    'actions' => $actions
+                ]
+            ]);
+        } catch (ClientResponseException $e) {
+            if ($e->getCode() !== 404) {
+                throw $e;
+            }
+        }
+    }
+
+    public function getIndices(string $pattern): array
+    {
+        try {
+            $response = $this->client->indices()->get([
+                'index' => $pattern
+            ]);
+
+            return array_keys($response->asArray());
+        } catch (ClientResponseException $e) {
+            if ($e->getCode() === 404) {
+                return [];
+            }
+
+            throw $e;
+        }
     }
 
     public function deleteIndex(string $index): void {
-        $this->client->indices()->delete([
-            'index' => $index
-        ]);
+        try {
+            $this->client->indices()->delete([
+                'index' => $index
+            ]);
+        } catch (ClientResponseException $e) {
+            if ($e->getCode() !== 404) {
+                throw $e;
+            }
+        }
     }
 }
