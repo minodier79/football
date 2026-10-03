@@ -27,9 +27,11 @@ class SqlQueryHandler
     {
         $stmt = $this->pdo->query($sql);
 
-        return $stmt->fetch(
+        $row = $stmt->fetch(
             PDO::FETCH_ASSOC
         );
+
+        return $row === false ? null : $row;
     }
 
     public function find(string $table, int $id): ?array

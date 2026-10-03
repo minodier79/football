@@ -52,7 +52,7 @@ SQL;
         }
     }
 
-    private function preBuildCorrections(?int $id): void
+    private function preBuildCorrections(?int $id = null): void
     {
         //$sql = sprintf('SELECT * FROM correction %s', $id ? sprintf(' WHERE id = ');
         /*foreach($this->handler->iterator($sql) as $row) {

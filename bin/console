@@ -3,6 +3,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use App\Command\ImportEditionCommand;
 use App\Command\IndexCommand;
 use App\Http\RequestContext;
 
@@ -12,6 +13,7 @@ $container = require __DIR__ . '/../bootstrap.php';
 // commandes disponibles
 $commands = [
     'index:full' => IndexCommand::class,
+    'import:edition' => ImportEditionCommand::class,
 ];
 
 // argument CLI
